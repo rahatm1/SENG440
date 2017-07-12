@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "cordic_fixed_point.h"
+#define SYSTEM_PROCESSING_GAIN 1.6476025812107
 
 int main(void)
 {
@@ -24,13 +25,13 @@ int main(void)
   printf("y_d = %f\t\t\ty_i = %i\n", y_i/(float)(1<<15), y_i);
   printf("z_d = %f\t\t\tz_i = %i\n", z_i/(float)(1<<15), z_i);
 
-  double rx_d = 1.0, ry_d = 0.0, rz_d = 1.57;
+  double rx_d = 1.0, ry_d = 0.0, rz_d = 0.7;
   int rx_i = rx_d*(1<<15), ry_i = ry_d*(1<<15), rz_i = rz_d*(1<<15);
 
   cordic_R_fixed_point(&rx_i, &ry_i, &rz_i);
   printf("Rotation mode:\n");
-  printf("rx_d = %f\t\t\trx_i = %i\n", rx_i/(float)(1<<15), rx_i);
-  printf("ry_d = %f\t\t\try_i = %i\n", ry_i/(float)(1<<15), ry_i);
+  printf("rx_d = %f\t\t\trx_i = %i\n", rx_i/((float)(1<<15) * SYSTEM_PROCESSING_GAIN), rx_i);
+  printf("ry_d = %f\t\t\try_i = %i\n", ry_i/((float)(1<<15) * SYSTEM_PROCESSING_GAIN), ry_i);
   printf("rz_d = %f\t\t\trz_i = %i\n", rz_i/(float)(1<<15), rz_i);
 
   printf("\n");
