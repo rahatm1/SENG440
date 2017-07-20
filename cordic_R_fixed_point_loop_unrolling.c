@@ -3,18 +3,16 @@
 
 void cordic_R_fixed_point(int *x, int *y, int *z)
 {
-    int x_temp_1, y_temp_1, z_temp_1, x1_temp_1, y1_temp_1, z1_temp_1;
-    int x_temp_2, y_temp_2,x1_temp_2, y1_temp_2, i;
+    int x_temp_1, y_temp_1, z_temp_1;
+    int x_temp_2, y_temp_2, i, j;
 
     x_temp_1 = *x;
     y_temp_1 = *y;
     z_temp_1 = *z;
+    i = 0;
+    j = 1;
 
-    x1_temp_1 = *x;
-    y1_temp_1 = *y;
-    z1_temp_1 = *z;
-    int y_val, x_val;
-    for(i=0; i<15; i += 2)
+    for(; i<15; i +=2, j +=2)
     {
         // y_val = (y_temp_1 >> i);
         // x_val = (x_temp_1 >> i)
@@ -36,15 +34,15 @@ void cordic_R_fixed_point(int *x, int *y, int *z)
 
         if( z_temp_1<0)
             {
-                x_temp_2 = x_temp_1 + (y_temp_1 >> (i+1));
-                y_temp_2 = y_temp_1 - (x_temp_1 >> (i+1));
-                z_temp_1 += z_table[i+1];
+                x_temp_2 = x_temp_1 + (y_temp_1 >> j);
+                y_temp_2 = y_temp_1 - (x_temp_1 >> j);
+                z_temp_1 += z_table[j];
             }
         else
         {
-            x_temp_2 = x_temp_1 - (y_temp_1 >> (i+1));
-            y_temp_2 = y_temp_1 + (x_temp_1 >> (i+1));
-            z_temp_1 -= z_table[i+1];
+            x_temp_2 = x_temp_1 - (y_temp_1 >> j);
+            y_temp_2 = y_temp_1 + (x_temp_1 >> j);
+            z_temp_1 -= z_table[j];
         }
         x_temp_1 = x_temp_2;
         y_temp_1 = y_temp_2;
