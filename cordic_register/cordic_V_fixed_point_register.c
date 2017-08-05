@@ -1,12 +1,15 @@
 #include <stdio.h>
-#include "cordic_fixed_point.h"
+#include "../cordic_fixed_point.h"
 
 
 void cordic_V_fixed_point(int *x, int *y, int *z)
 {
-    register int x_temp_1, y_temp_1, z_temp;
-    register int x_temp_2, y_temp_2, i;
-
+    register int i asm("r4");
+    register int x_temp_1 asm("r5");
+    register int y_temp_1 asm("r6");
+    register int z_temp asm("r7");
+    register int x_temp_2, y_temp_2;
+    
     x_temp_1 = *x;
     y_temp_1 = *y;
     z_temp = 0;
