@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "cordic_fixed_point.h"
+#include "../cordic_fixed_point.h"
 
 
 void cordic_V_fixed_point(int *x, int *y, int *z)
