@@ -2,7 +2,7 @@
 
 void cordic_V_fixed_point( int *x, int *y, int *z) 
 {
-    register int x_temp, y_temp, z_temp;
+    register int x_temp, y_temp, z_temp, i;
     register int xz_temp;
     
     x_temp = *x;
