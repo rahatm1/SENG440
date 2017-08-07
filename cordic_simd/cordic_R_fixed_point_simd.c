@@ -1,44 +1,42 @@
 #include <stdio.h>
 #include <stdint.h>
-#include "../cordic_fixed_point.h"
 #include <arm_neon.h>
+#include "../cordic_fixed_point.h"
 
-#define MACRO(i)  \
-        x_tmp = vshr_n_s32(x1, i); \
-        x_tmp = vrev64_s32(x1); \
-        x2_add = vadd_s32(x1, x_tmp); \
-        x2_sub = vsub_s32(x1, x_tmp); \
-        z_temp_1 = z_temp_1<0 ? z_temp_1 + z_table[i] : z_temp_1 - z_table[i]; \
-        x1 = z_temp_1<0 ? vext_s32(x2_add, x2_sub, 1) : vext_s32(x2_sub, x2_add, 1);
 
 void cordic_R_fixed_point(int *x, int *y, int *z)
 {
-    register int z_temp_1 asm ("r5");
+    int temp1[2];
+    temp1[0] = *x;
+    temp1[1] = *y;
 
-    z_temp_1 = *z;
+    int z_temp, i;
+    int32x2_t vec_add, vec_sub;
+    z_temp = *z;
 
-    int32_t test[2] = {0,0};
-    int32x2_t x1 = vld1_s32(test);
-    int32x2_t x_tmp;
+    int32x2_t res = vld1_s32(temp1);
+    for(i=0; i<15; i++)
+    {
+        int32x2_t temp = vrev64_s32(vrshl_s32(res, vdup_n_s32(-i)));
 
-    int32x2_t x2_add;
-    int32x2_t x2_sub;
+        vec_add = vadd_s32(res, temp);
+        vec_sub = vsub_s32(res, temp);
 
-    MACRO(1);
-    MACRO(2);
-    MACRO(3);
-    MACRO(4);
-    MACRO(5);
-    MACRO(6);
-    MACRO(7);
-    MACRO(8);
-    MACRO(9);
-    MACRO(10);
-    MACRO(11);
-    MACRO(12);
-    MACRO(13);
-    MACRO(14);
+        if(z_temp < 0)
+        {
+            res = vrev64_s32(vext_s32(vec_sub, vec_add, 1));
+            z_temp += z_table[i];
+        }
+        else
+        {
+            res = vrev64_s32(vext_s32(vec_add, vec_sub, 1));
+            z_temp -= z_table[i];
+        }
+    }
 
-    //TODO
-    //return...
+    vst1_s32(temp1,res);
+
+    *x = temp1[0];
+    *y = temp1[1];
+    *z = z_temp;
 }
