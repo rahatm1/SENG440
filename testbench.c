@@ -2,16 +2,59 @@
 #include <stdlib.h>
 #include <math.h>
 #include "cordic_fixed_point.h"
-#define SYSTEM_PROCESSING_GAIN 1.6476025812107
+#define SYSTEM_PROCESSING_GAIN 1/1.6476025812107
 #define KRED  "\x1B[31m"
 #define RESET "\x1B[0m"
 #define EPSILON 0.001
+#define convertToFixedPoint(dbl) dbl * (1<<15)
+#define convertToDouble(dbl) dbl/(double)(1<<15)
+#define randomSign (rand() %2 == 0 ? -1 : 1)
 
 double randZeroToPi()
 {
-	return (rand() / (RAND_MAX + 1.)) * M_PI_2;
+	return randomSign * (rand() / (RAND_MAX + 1.)) * M_PI_2;
 }
 
+double randZeroToFive()
+{
+    return (rand() / (RAND_MAX + 1.)) * 5;
+}
+
+double arctan( double y, double x) {
+	int x_i = convertToFixedPoint(x);
+	int y_i = convertToFixedPoint(y);
+    int z_i = 0;
+
+    cordic_V_fixed_point(&x_i, &y_i, &z_i);
+    return convertToDouble(z_i);
+}
+
+double arctan2(double x) {
+    return arctan(x, 1);
+}
+
+double sin_cordic(double z) {
+	int x_i = convertToFixedPoint(1.0);
+	int y_i = convertToFixedPoint(0.0);
+	int z_i = convertToFixedPoint(z);
+    cordic_R_fixed_point(&x_i, &y_i, &z_i);
+    return convertToDouble(y_i) * SYSTEM_PROCESSING_GAIN;
+}
+
+double cos_cordic(double z) {
+	int x_i = convertToFixedPoint(1);
+	int y_i = convertToFixedPoint(0);
+	int z_i = convertToFixedPoint(z);
+    cordic_R_fixed_point(&x_i, &y_i, &z_i);
+    return convertToDouble(x_i) * SYSTEM_PROCESSING_GAIN;
+}
+
+void compareActualToExpected(double actual, double expected) {
+    if (fabs(actual - expected) > EPSILON) {
+        printf(KRED "MISMATCH\n" RESET);
+        printf("Actual: %f, Expected: %f\n", actual, expected);
+    }
+}
 
 int main(void)
 {
@@ -29,41 +72,29 @@ int main(void)
 	printf("\n\n");
 
 	double x_d, y_d, z_d;
-	int x_i, y_i, z_i;
 
 	for(i=0; i<15; i++){
-		x_d = randZeroToPi();
-		y_d = randZeroToPi();
+		x_d = randZeroToFive(); // must be >= 0
+		y_d = randomSign * randZeroToFive();
+
+        //Arctan(y/x)
 		z_d = atan(y_d/x_d);
+        printf("arctan(%f, %f) = %f\n", y_d, x_d, arctan(y_d, x_d));
+        compareActualToExpected(arctan(y_d, x_d), z_d);
 
-		x_i = x_d * (1<<15);
-		y_i = y_d * (1<<15);
-		z_i = z_d * (1<<15);
+        //Arctan(x)
+		x_d = randZeroToFive();
+		z_d = atan(x_d);
+        printf("arctan2(%f) = %f\n", x_d, arctan2(x_d));
+        compareActualToExpected(arctan2(x_d), z_d);
 
-		printf("\nArctan of y_d/x_d:\n");
-		printf("x_d = %f\t\t\tx_i = %i\n", x_d, x_i);
-		printf("y_d = %f\t\t\ty_i = %i\n", y_d, y_i);
-		printf("z_d = %f\t\t\tz_i = %i\n", z_d, z_i);
+        // cos(z) & sin(z)
+		z_d = randZeroToPi();
+		printf("cos(%f)=%f\nsin(%f)=%f\n", z_d, cos_cordic(z_d), z_d, sin_cordic(z_d));
+        compareActualToExpected(cos_cordic(z_d), cos(z_d));
+        compareActualToExpected(sin_cordic(z_d), sin(z_d));
 
-		cordic_V_fixed_point(&x_i, &y_i, &z_i);
-		printf("\nVector mode:\n");
-		/* printf("x_d = %f\t\t\tx_i = %i\n", x_i/(float)(1<<15), x_i); */
-		/* printf("y_d = %f\t\t\ty_i = %i\n", y_i/(float)(1<<15), y_i); */
-		printf("z_d = %f\t\t\tz_i = %i\n", z_i/(float)(1<<15), z_i);
-		if (fabs( (z_i/(float)(1<<15)) - z_d) > EPSILON) printf(KRED "MISMATCH\n" RESET);
-
-		double rx_d = 1.0, ry_d = 0.0, rz_d = randZeroToPi();
-		int rx_i = rx_d*(1<<15), ry_i = ry_d*(1<<15), rz_i = rz_d*(1<<15);
-		printf("\nSin & Cos values:\n");
-		printf("cos(%f)=%f\nsin(%f)=%f", rz_d, cos(rz_d), rz_d, sin(rz_d));
-
-		cordic_R_fixed_point(&rx_i, &ry_i, &rz_i);
-		printf("\nRotation mode:\n");
-		printf("rx_d = %f\t\t\trx_i = %i\n", rx_i/((float)(1<<15) * SYSTEM_PROCESSING_GAIN), rx_i);
-		printf("ry_d = %f\t\t\try_i = %i\n", ry_i/((float)(1<<15) * SYSTEM_PROCESSING_GAIN), ry_i);
-		if (fabs(cos(rz_d) - rx_i/((float)(1<<15) * SYSTEM_PROCESSING_GAIN)) > EPSILON) printf(KRED "MISMATCH\n" RESET);
-		if (fabs(sin(rz_d) - ry_i/((float)(1<<15) * SYSTEM_PROCESSING_GAIN)) > EPSILON) printf(KRED "MISMATCH\n" RESET);
-		/* printf("rz_d = %f\t\t\trz_i = %i\n", rz_i/(float)(1<<15), rz_i); */
 	}
 
 }
+
